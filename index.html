@@ -297,6 +297,154 @@
             margin-top: 5px;
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 1.5em;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #6c757d;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -394,6 +542,46 @@
         </div>
     </div>
 
+    <!-- モーダルダイアログ -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">予定を作成</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modalScheduleTitle">予定名</label>
+                    <input type="text" id="modalScheduleTitle" placeholder="予定名を入力">
+                </div>
+                <div class="form-group">
+                    <label for="modalStartTime">開始時刻</label>
+                    <input type="time" id="modalStartTime">
+                </div>
+                <div class="form-group">
+                    <label for="modalEndTime">終了時刻</label>
+                    <input type="time" id="modalEndTime">
+                </div>
+                <div class="form-group">
+                    <label>カラー</label>
+                    <div class="modal-color-picker" id="modalColorPicker">
+                        <div class="color-option selected" data-color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal()">キャンセル</button>
+                <button class="btn-danger" id="deleteButton" onclick="deleteFromModal()" style="display: none;">削除</button>
+                <button class="btn-primary" onclick="saveScheduleFromModal()">保存</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let schedules = [];
         let selectedColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
@@ -402,6 +590,9 @@
         let dragStartTop = 0;
         let displayStartHour = 6;
         let displayEndHour = 24;
+        let editingIndex = -1; // -1: 新規作成, 0以上: 編集モード
+        let modalSelectedColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        let isDragging = false;
 
         // 初期化
         function init() {
@@ -412,6 +603,8 @@
             updateStats();
             updateCurrentTimeLine();
             setupColorPicker();
+            setupModalColorPicker();
+            setupTimelineClick();
 
             // 1分ごとに現在時刻の線を更新
             setInterval(updateCurrentTimeLine, 60000);
@@ -566,6 +759,13 @@
             item.appendChild(time);
             item.appendChild(deleteBtn);
 
+            // クリックイベント（編集用）
+            item.addEventListener('click', (e) => {
+                if (!isDragging) {
+                    openEditModal(index);
+                }
+            });
+
             // ドラッグイベント
             item.addEventListener('dragstart', handleDragStart);
             item.addEventListener('dragend', handleDragEnd);
@@ -637,6 +837,7 @@
 
         // ドラッグ開始
         function handleDragStart(e) {
+            isDragging = true;
             draggedElement = e.target;
             dragStartY = e.clientY;
             dragStartTop = parseInt(draggedElement.style.top);
@@ -678,6 +879,11 @@
             renderSchedules();
 
             draggedElement = null;
+
+            // ドラッグ終了後、少し遅延してからクリックを有効にする
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
         }
 
         // タイムライン上でのドラッグオーバー
@@ -738,10 +944,175 @@
             document.getElementById('freeHours').textContent = freeHours + 'h';
         }
 
+        // モーダルのカラーピッカーをセットアップ
+        function setupModalColorPicker() {
+            const colorOptions = document.querySelectorAll('#modalColorPicker .color-option');
+            colorOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    colorOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    modalSelectedColor = option.dataset.color;
+                });
+            });
+        }
+
+        // タイムラインクリックをセットアップ
+        function setupTimelineClick() {
+            const timeline = document.getElementById('timeline');
+            timeline.addEventListener('click', (e) => {
+                // スケジュールアイテムや他の要素をクリックした場合は無視
+                if (e.target.closest('.schedule-item') ||
+                    e.target.classList.contains('hour-marker') ||
+                    e.target.classList.contains('hour-line')) {
+                    return;
+                }
+
+                // タイムライン内でのクリック位置から時刻を計算
+                const rect = timeline.getBoundingClientRect();
+                const clickY = e.clientY - rect.top + timeline.parentElement.scrollTop;
+
+                // 相対位置から絶対時刻（分）に変換
+                const displayStartMinutes = displayStartHour * 60;
+                let clickMinutes = displayStartMinutes + clickY;
+
+                // 15分単位にスナップ
+                clickMinutes = Math.round(clickMinutes / 15) * 15;
+
+                // 範囲内に制限
+                clickMinutes = Math.max(displayStartMinutes, Math.min(displayEndHour * 60 - 60, clickMinutes));
+
+                // 開始時刻と終了時刻を設定（デフォルトは1時間）
+                const startTime = minutesToTime(clickMinutes);
+                const endTime = minutesToTime(Math.min(clickMinutes + 60, displayEndHour * 60));
+
+                openCreateModal(startTime, endTime);
+            });
+        }
+
+        // 新規作成モーダルを開く
+        function openCreateModal(startTime, endTime) {
+            editingIndex = -1;
+            document.getElementById('modalTitle').textContent = '予定を作成';
+            document.getElementById('modalScheduleTitle').value = '';
+            document.getElementById('modalStartTime').value = startTime;
+            document.getElementById('modalEndTime').value = endTime;
+            document.getElementById('deleteButton').style.display = 'none';
+
+            // カラーピッカーをリセット
+            const colorOptions = document.querySelectorAll('#modalColorPicker .color-option');
+            colorOptions.forEach(opt => opt.classList.remove('selected'));
+            colorOptions[0].classList.add('selected');
+            modalSelectedColor = colorOptions[0].dataset.color;
+
+            document.getElementById('scheduleModal').classList.add('show');
+            document.getElementById('modalScheduleTitle').focus();
+        }
+
+        // 編集モーダルを開く
+        function openEditModal(index) {
+            editingIndex = index;
+            const schedule = schedules[index];
+
+            document.getElementById('modalTitle').textContent = '予定を編集';
+            document.getElementById('modalScheduleTitle').value = schedule.title;
+            document.getElementById('modalStartTime').value = schedule.startTime;
+            document.getElementById('modalEndTime').value = schedule.endTime;
+            document.getElementById('deleteButton').style.display = 'block';
+
+            // カラーピッカーを現在の色に設定
+            const colorOptions = document.querySelectorAll('#modalColorPicker .color-option');
+            colorOptions.forEach(opt => {
+                if (opt.dataset.color === schedule.color) {
+                    opt.classList.add('selected');
+                    modalSelectedColor = schedule.color;
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
+
+            document.getElementById('scheduleModal').classList.add('show');
+            document.getElementById('modalScheduleTitle').focus();
+        }
+
+        // モーダルを閉じる
+        function closeModal() {
+            document.getElementById('scheduleModal').classList.remove('show');
+            editingIndex = -1;
+        }
+
+        // モーダルから保存
+        function saveScheduleFromModal() {
+            const title = document.getElementById('modalScheduleTitle').value.trim();
+            const startTime = document.getElementById('modalStartTime').value;
+            const endTime = document.getElementById('modalEndTime').value;
+
+            if (!title) {
+                alert('予定名を入力してください');
+                return;
+            }
+
+            if (startTime >= endTime) {
+                alert('終了時刻は開始時刻より後に設定してください');
+                return;
+            }
+
+            const schedule = {
+                title: title,
+                startTime: startTime,
+                endTime: endTime,
+                color: modalSelectedColor
+            };
+
+            if (editingIndex === -1) {
+                // 新規作成
+                schedules.push(schedule);
+            } else {
+                // 編集
+                schedules[editingIndex] = schedule;
+            }
+
+            saveSchedules();
+            renderSchedules();
+            closeModal();
+        }
+
+        // モーダルから削除
+        function deleteFromModal() {
+            if (editingIndex >= 0) {
+                if (confirm('この予定を削除しますか？')) {
+                    schedules.splice(editingIndex, 1);
+                    saveSchedules();
+                    renderSchedules();
+                    closeModal();
+                }
+            }
+        }
+
+        // モーダル外をクリックしたら閉じる
+        document.getElementById('scheduleModal').addEventListener('click', (e) => {
+            if (e.target.id === 'scheduleModal') {
+                closeModal();
+            }
+        });
+
+        // Escキーでモーダルを閉じる
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
         // Enterキーでスケジュール追加
         document.getElementById('scheduleTitle').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 addSchedule();
+            }
+        });
+
+        // モーダル内でEnterキーで保存
+        document.getElementById('modalScheduleTitle').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveScheduleFromModal();
             }
         });
 
