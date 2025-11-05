@@ -788,13 +788,13 @@
 
         // スケジュールの追加
         function addSchedule() {
-            const title = document.getElementById('scheduleTitle').value.trim();
+            let title = document.getElementById('scheduleTitle').value.trim();
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
 
+            // タイトルが空の場合は「【無題】」を設定
             if (!title) {
-                alert('スケジュール名を入力してください');
-                return;
+                title = '【無題】';
             }
 
             if (startTime >= endTime) {
@@ -1042,13 +1042,13 @@
 
         // モーダルから保存
         function saveScheduleFromModal() {
-            const title = document.getElementById('modalScheduleTitle').value.trim();
+            let title = document.getElementById('modalScheduleTitle').value.trim();
             const startTime = document.getElementById('modalStartTime').value;
             const endTime = document.getElementById('modalEndTime').value;
 
+            // タイトルが空の場合は「【無題】」を設定
             if (!title) {
-                alert('予定名を入力してください');
-                return;
+                title = '【無題】';
             }
 
             if (startTime >= endTime) {
