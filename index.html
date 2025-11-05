@@ -66,6 +66,11 @@
             min-width: 150px;
         }
 
+        .controls input[type="time"].display-time {
+            flex: 0;
+            min-width: 100px;
+        }
+
         .controls button {
             background: #667eea;
             color: white;
@@ -79,9 +84,51 @@
             background: #5568d3;
         }
 
+        .time-range-controls {
+            padding: 15px 20px;
+            background: #e9ecef;
+            border-bottom: 2px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .time-range-controls label {
+            font-size: 13px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .time-range-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .schedule-container {
             padding: 20px;
             position: relative;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .schedule-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .schedule-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .schedule-container::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .schedule-container::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
         }
 
         .timeline {
@@ -269,6 +316,17 @@
             <p>ドラッグ&ドロップでスケジュールを簡単に管理</p>
         </div>
 
+        <div class="time-range-controls">
+            <div class="time-range-group">
+                <label for="displayStartTime">表示開始:</label>
+                <input type="time" id="displayStartTime" class="display-time" value="06:00" onchange="updateDisplayRange()">
+            </div>
+            <div class="time-range-group">
+                <label for="displayEndTime">表示終了:</label>
+                <input type="time" id="displayEndTime" class="display-time" value="24:00" onchange="updateDisplayRange()">
+            </div>
+        </div>
+
         <div class="controls">
             <input type="text" id="scheduleTitle" placeholder="スケジュール名を入力">
             <input type="time" id="startTime" value="09:00">
@@ -315,9 +373,12 @@
         let draggedElement = null;
         let dragStartY = 0;
         let dragStartTop = 0;
+        let displayStartHour = 6;
+        let displayEndHour = 24;
 
         // 初期化
         function init() {
+            loadSettings();
             loadSchedules();
             renderTimeline();
             renderSchedules();
@@ -327,6 +388,28 @@
 
             // 1分ごとに現在時刻の線を更新
             setInterval(updateCurrentTimeLine, 60000);
+        }
+
+        // ローカルストレージから設定を読み込み
+        function loadSettings() {
+            const saved = localStorage.getItem('displaySettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                displayStartHour = settings.startHour || 6;
+                displayEndHour = settings.endHour || 24;
+
+                document.getElementById('displayStartTime').value = minutesToTime(displayStartHour * 60);
+                document.getElementById('displayEndTime').value = minutesToTime(displayEndHour * 60);
+            }
+        }
+
+        // ローカルストレージに設定を保存
+        function saveSettings() {
+            const settings = {
+                startHour: displayStartHour,
+                endHour: displayEndHour
+            };
+            localStorage.setItem('displaySettings', JSON.stringify(settings));
         }
 
         // ローカルストレージからスケジュールを読み込み
@@ -342,16 +425,50 @@
             localStorage.setItem('dailySchedules', JSON.stringify(schedules));
         }
 
+        // 表示範囲の更新
+        function updateDisplayRange() {
+            const startTime = document.getElementById('displayStartTime').value;
+            const endTime = document.getElementById('displayEndTime').value;
+
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = timeToMinutes(endTime);
+
+            displayStartHour = Math.floor(startMinutes / 60);
+            displayEndHour = Math.ceil(endMinutes / 60);
+
+            if (displayStartHour >= displayEndHour) {
+                alert('表示終了時刻は表示開始時刻より後に設定してください');
+                return;
+            }
+
+            saveSettings();
+            renderTimeline();
+            renderSchedules();
+            updateCurrentTimeLine();
+        }
+
         // タイムラインの描画
         function renderTimeline() {
             const timeline = document.getElementById('timeline');
 
+            // 既存のマーカーとラインを削除
+            const existingMarkers = timeline.querySelectorAll('.hour-marker');
+            const existingLines = timeline.querySelectorAll('.hour-line');
+            existingMarkers.forEach(marker => marker.remove());
+            existingLines.forEach(line => line.remove());
+
+            // タイムラインの高さを動的に設定
+            const displayHours = displayEndHour - displayStartHour;
+            timeline.style.minHeight = (displayHours * 60) + 'px';
+
             // 時間マーカーと線を描画
-            for (let i = 0; i <= 24; i++) {
+            for (let i = 0; i <= displayHours; i++) {
+                const actualHour = displayStartHour + i;
+
                 const hourMarker = document.createElement('div');
                 hourMarker.className = 'hour-marker';
                 hourMarker.style.top = (i * 60) + 'px';
-                hourMarker.textContent = i + ':00';
+                hourMarker.textContent = actualHour + ':00';
                 timeline.appendChild(hourMarker);
 
                 const hourLine = document.createElement('div');
@@ -389,7 +506,16 @@
             const endMinutes = timeToMinutes(schedule.endTime);
             const duration = endMinutes - startMinutes;
 
-            item.style.top = startMinutes + 'px';
+            // 表示開始時刻からの相対位置を計算
+            const displayStartMinutes = displayStartHour * 60;
+            const relativeTop = startMinutes - displayStartMinutes;
+
+            // 表示範囲外のスケジュールは非表示
+            if (endMinutes <= displayStartMinutes || startMinutes >= displayEndHour * 60) {
+                item.style.display = 'none';
+            }
+
+            item.style.top = relativeTop + 'px';
             item.style.height = duration + 'px';
             item.style.background = schedule.color;
 
@@ -498,19 +624,27 @@
             draggedElement.classList.remove('dragging');
 
             const deltaY = e.clientY - dragStartY;
-            const newTop = Math.max(0, Math.min(1440, dragStartTop + deltaY));
-
-            // 15分単位にスナップ
-            const snappedTop = Math.round(newTop / 15) * 15;
+            const newTop = dragStartTop + deltaY;
 
             const index = parseInt(draggedElement.dataset.index);
             const schedule = schedules[index];
-
-            const startMinutes = snappedTop;
             const duration = timeToMinutes(schedule.endTime) - timeToMinutes(schedule.startTime);
-            const endMinutes = Math.min(1440, startMinutes + duration);
 
-            schedule.startTime = minutesToTime(startMinutes);
+            // 表示開始時刻からの相対位置を絶対位置（分）に変換
+            const displayStartMinutes = displayStartHour * 60;
+            const displayEndMinutes = displayEndHour * 60;
+            let absoluteMinutes = displayStartMinutes + newTop;
+
+            // 表示範囲内に制限
+            const maxStartMinutes = displayEndMinutes - duration;
+            absoluteMinutes = Math.max(displayStartMinutes, Math.min(maxStartMinutes, absoluteMinutes));
+
+            // 15分単位にスナップ
+            const snappedMinutes = Math.round(absoluteMinutes / 15) * 15;
+
+            const endMinutes = Math.min(1440, snappedMinutes + duration);
+
+            schedule.startTime = minutesToTime(snappedMinutes);
             schedule.endTime = minutesToTime(endMinutes);
 
             saveSchedules();
@@ -544,7 +678,18 @@
             const now = new Date();
             const minutes = now.getHours() * 60 + now.getMinutes();
             const line = document.getElementById('currentTimeLine');
-            line.style.top = minutes + 'px';
+
+            // 表示範囲内かチェック
+            const displayStartMinutes = displayStartHour * 60;
+            const displayEndMinutes = displayEndHour * 60;
+
+            if (minutes >= displayStartMinutes && minutes <= displayEndMinutes) {
+                const relativeTop = minutes - displayStartMinutes;
+                line.style.top = relativeTop + 'px';
+                line.style.display = 'block';
+            } else {
+                line.style.display = 'none';
+            }
         }
 
         // 統計情報の更新
