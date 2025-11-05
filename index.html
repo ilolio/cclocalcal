@@ -14,17 +14,23 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            height: 100vh;
             padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .container {
             max-width: 1000px;
-            margin: 0 auto;
+            width: 100%;
+            height: calc(100vh - 40px);
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
@@ -32,6 +38,7 @@
             color: white;
             padding: 30px;
             text-align: center;
+            flex: 0 0 auto;
         }
 
         .header h1 {
@@ -50,6 +57,7 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            flex: 0 0 auto;
         }
 
         .controls input,
@@ -92,6 +100,7 @@
             gap: 15px;
             align-items: center;
             flex-wrap: wrap;
+            flex: 0 0 auto;
         }
 
         .time-range-controls label {
@@ -109,8 +118,9 @@
         .schedule-container {
             padding: 20px;
             position: relative;
-            max-height: 600px;
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
         }
 
         .schedule-container::-webkit-scrollbar {
@@ -219,7 +229,7 @@
         .color-picker {
             display: flex;
             gap: 5px;
-            margin-top: 10px;
+            flex: 0 0 auto;
         }
 
         .color-option {
@@ -268,6 +278,7 @@
             justify-content: space-around;
             flex-wrap: wrap;
             gap: 15px;
+            flex: 0 0 auto;
         }
 
         .stat-item {
@@ -287,6 +298,22 @@
         }
 
         @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                height: calc(100vh - 20px);
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
             .controls {
                 flex-direction: column;
             }
