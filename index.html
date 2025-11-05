@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1日のスケジュール管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .controls input,
+        .controls select,
+        .controls button {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .controls input {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .controls button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover {
+            background: #5568d3;
+        }
+
+        .schedule-container {
+            padding: 20px;
+            position: relative;
+        }
+
+        .timeline {
+            position: relative;
+            border-left: 2px solid #e9ecef;
+            margin-left: 60px;
+            min-height: 1440px;
+        }
+
+        .hour-marker {
+            position: absolute;
+            left: -60px;
+            width: 50px;
+            text-align: right;
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .hour-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e9ecef;
+        }
+
+        .schedule-item {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: move;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s, transform 0.1s;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .schedule-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+
+        .schedule-item.dragging {
+            opacity: 0.7;
+            transform: scale(1.02);
+            z-index: 1000;
+        }
+
+        .schedule-item-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .schedule-item-time {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .schedule-item-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            transition: background 0.3s;
+        }
+
+        .schedule-item-delete:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: border 0.3s;
+        }
+
+        .color-option.selected {
+            border-color: #333;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .current-time-line {
+            position: absolute;
+            left: -60px;
+            right: 0;
+            height: 2px;
+            background: #dc3545;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .current-time-line::before {
+            content: '';
+            position: absolute;
+            left: 58px;
+            top: -4px;
+            width: 10px;
+            height: 10px;
+            background: #dc3545;
+            border-radius: 50%;
+        }
+
+        .stats {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .controls input,
+            .controls select,
+            .controls button {
+                width: 100%;
+            }
+
+            .timeline {
+                margin-left: 50px;
+            }
+
+            .hour-marker {
+                left: -50px;
+                width: 40px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 1日のスケジュール</h1>
+            <p>ドラッグ&ドロップでスケジュールを簡単に管理</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="scheduleTitle" placeholder="スケジュール名を入力">
+            <input type="time" id="startTime" value="09:00">
+            <input type="time" id="endTime" value="10:00">
+            <button onclick="addSchedule()">➕ 追加</button>
+            <button onclick="clearAllSchedules()">🗑️ 全削除</button>
+        </div>
+
+        <div class="color-picker" style="padding: 10px 20px; background: #f8f9fa;">
+            <span style="font-size: 12px; color: #6c757d; align-self: center;">色:</span>
+            <div class="color-option selected" data-color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+            <div class="color-option" data-color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+            <div class="color-option" data-color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+            <div class="color-option" data-color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+            <div class="color-option" data-color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+            <div class="color-option" data-color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+        </div>
+
+        <div class="schedule-container">
+            <div class="timeline" id="timeline">
+                <div class="current-time-line" id="currentTimeLine"></div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalSchedules">0</div>
+                <div class="stat-label">総スケジュール数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalHours">0h</div>
+                <div class="stat-label">総予定時間</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="freeHours">24h</div>
+                <div class="stat-label">空き時間</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let schedules = [];
+        let selectedColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        let draggedElement = null;
+        let dragStartY = 0;
+        let dragStartTop = 0;
+
+        // 初期化
+        function init() {
+            loadSchedules();
+            renderTimeline();
+            renderSchedules();
+            updateStats();
+            updateCurrentTimeLine();
+            setupColorPicker();
+
+            // 1分ごとに現在時刻の線を更新
+            setInterval(updateCurrentTimeLine, 60000);
+        }
+
+        // ローカルストレージからスケジュールを読み込み
+        function loadSchedules() {
+            const saved = localStorage.getItem('dailySchedules');
+            if (saved) {
+                schedules = JSON.parse(saved);
+            }
+        }
+
+        // ローカルストレージにスケジュールを保存
+        function saveSchedules() {
+            localStorage.setItem('dailySchedules', JSON.stringify(schedules));
+        }
+
+        // タイムラインの描画
+        function renderTimeline() {
+            const timeline = document.getElementById('timeline');
+
+            // 時間マーカーと線を描画
+            for (let i = 0; i <= 24; i++) {
+                const hourMarker = document.createElement('div');
+                hourMarker.className = 'hour-marker';
+                hourMarker.style.top = (i * 60) + 'px';
+                hourMarker.textContent = i + ':00';
+                timeline.appendChild(hourMarker);
+
+                const hourLine = document.createElement('div');
+                hourLine.className = 'hour-line';
+                hourLine.style.top = (i * 60) + 'px';
+                timeline.appendChild(hourLine);
+            }
+        }
+
+        // スケジュールの描画
+        function renderSchedules() {
+            const timeline = document.getElementById('timeline');
+
+            // 既存のスケジュールアイテムを削除
+            const existingItems = timeline.querySelectorAll('.schedule-item');
+            existingItems.forEach(item => item.remove());
+
+            // 各スケジュールを描画
+            schedules.forEach((schedule, index) => {
+                const item = createScheduleElement(schedule, index);
+                timeline.appendChild(item);
+            });
+
+            updateStats();
+        }
+
+        // スケジュール要素の作成
+        function createScheduleElement(schedule, index) {
+            const item = document.createElement('div');
+            item.className = 'schedule-item';
+            item.draggable = true;
+            item.dataset.index = index;
+
+            const startMinutes = timeToMinutes(schedule.startTime);
+            const endMinutes = timeToMinutes(schedule.endTime);
+            const duration = endMinutes - startMinutes;
+
+            item.style.top = startMinutes + 'px';
+            item.style.height = duration + 'px';
+            item.style.background = schedule.color;
+
+            const title = document.createElement('div');
+            title.className = 'schedule-item-title';
+            title.textContent = schedule.title;
+
+            const time = document.createElement('div');
+            time.className = 'schedule-item-time';
+            time.textContent = `${schedule.startTime} - ${schedule.endTime}`;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'schedule-item-delete';
+            deleteBtn.textContent = '×';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteSchedule(index);
+            };
+
+            item.appendChild(title);
+            item.appendChild(time);
+            item.appendChild(deleteBtn);
+
+            // ドラッグイベント
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
+
+            return item;
+        }
+
+        // 時刻を分に変換
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        // 分を時刻に変換
+        function minutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+        }
+
+        // スケジュールの追加
+        function addSchedule() {
+            const title = document.getElementById('scheduleTitle').value.trim();
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            if (!title) {
+                alert('スケジュール名を入力してください');
+                return;
+            }
+
+            if (startTime >= endTime) {
+                alert('終了時刻は開始時刻より後に設定してください');
+                return;
+            }
+
+            const schedule = {
+                title: title,
+                startTime: startTime,
+                endTime: endTime,
+                color: selectedColor
+            };
+
+            schedules.push(schedule);
+            saveSchedules();
+            renderSchedules();
+
+            // 入力フィールドをクリア
+            document.getElementById('scheduleTitle').value = '';
+        }
+
+        // スケジュールの削除
+        function deleteSchedule(index) {
+            if (confirm('このスケジュールを削除しますか？')) {
+                schedules.splice(index, 1);
+                saveSchedules();
+                renderSchedules();
+            }
+        }
+
+        // 全スケジュールの削除
+        function clearAllSchedules() {
+            if (confirm('すべてのスケジュールを削除しますか？')) {
+                schedules = [];
+                saveSchedules();
+                renderSchedules();
+            }
+        }
+
+        // ドラッグ開始
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            dragStartY = e.clientY;
+            dragStartTop = parseInt(draggedElement.style.top);
+            draggedElement.classList.add('dragging');
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', draggedElement.innerHTML);
+        }
+
+        // ドラッグ終了
+        function handleDragEnd(e) {
+            draggedElement.classList.remove('dragging');
+
+            const deltaY = e.clientY - dragStartY;
+            const newTop = Math.max(0, Math.min(1440, dragStartTop + deltaY));
+
+            // 15分単位にスナップ
+            const snappedTop = Math.round(newTop / 15) * 15;
+
+            const index = parseInt(draggedElement.dataset.index);
+            const schedule = schedules[index];
+
+            const startMinutes = snappedTop;
+            const duration = timeToMinutes(schedule.endTime) - timeToMinutes(schedule.startTime);
+            const endMinutes = Math.min(1440, startMinutes + duration);
+
+            schedule.startTime = minutesToTime(startMinutes);
+            schedule.endTime = minutesToTime(endMinutes);
+
+            saveSchedules();
+            renderSchedules();
+
+            draggedElement = null;
+        }
+
+        // タイムライン上でのドラッグオーバー
+        document.addEventListener('dragover', (e) => {
+            if (draggedElement) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // カラーピッカーのセットアップ
+        function setupColorPicker() {
+            const colorOptions = document.querySelectorAll('.color-option');
+            colorOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    colorOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedColor = option.dataset.color;
+                });
+            });
+        }
+
+        // 現在時刻の線を更新
+        function updateCurrentTimeLine() {
+            const now = new Date();
+            const minutes = now.getHours() * 60 + now.getMinutes();
+            const line = document.getElementById('currentTimeLine');
+            line.style.top = minutes + 'px';
+        }
+
+        // 統計情報の更新
+        function updateStats() {
+            const totalSchedules = schedules.length;
+            let totalMinutes = 0;
+
+            schedules.forEach(schedule => {
+                const start = timeToMinutes(schedule.startTime);
+                const end = timeToMinutes(schedule.endTime);
+                totalMinutes += (end - start);
+            });
+
+            const totalHours = (totalMinutes / 60).toFixed(1);
+            const freeHours = (24 - totalMinutes / 60).toFixed(1);
+
+            document.getElementById('totalSchedules').textContent = totalSchedules;
+            document.getElementById('totalHours').textContent = totalHours + 'h';
+            document.getElementById('freeHours').textContent = freeHours + 'h';
+        }
+
+        // Enterキーでスケジュール追加
+        document.getElementById('scheduleTitle').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addSchedule();
+            }
+        });
+
+        // ページ読み込み時に初期化
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
