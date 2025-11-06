@@ -478,7 +478,20 @@
         // 開始モードの設定
         function setStartMode(mode) {
             startMode = mode;
+
+            // 開始モードに応じて現在のモードを設定
+            if (startMode === 'break') {
+                currentMode = 'short-break';
+            } else {
+                currentMode = 'work';
+            }
+
             updateStartModeUI();
+
+            // タイマーが動いていない場合のみリセット
+            if (!isRunning) {
+                resetTimer();
+            }
         }
 
         // 開始モードUIの更新
