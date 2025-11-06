@@ -217,12 +217,36 @@
             border-top: 2px solid #e9ecef;
         }
 
+        .start-mode-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
         .start-mode-section label {
-            display: block;
             font-size: 0.9em;
             color: #495057;
             font-weight: 500;
-            margin-bottom: 10px;
+            margin: 0;
+        }
+
+        .settings-toggle-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .settings-toggle-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
         }
 
         .mode-buttons {
@@ -347,14 +371,17 @@
         </div>
 
         <div class="start-mode-section">
-            <label>開始モード</label>
+            <div class="section-header">
+                <label>開始モード</label>
+                <button class="settings-toggle-btn" onclick="toggleSettings()">⚙️ 設定</button>
+            </div>
             <div class="mode-buttons">
                 <button class="mode-btn active" id="startWithWork" onclick="setStartMode('work')">作業から開始</button>
                 <button class="mode-btn" id="startWithBreak" onclick="setStartMode('break')">休憩から開始</button>
             </div>
         </div>
 
-        <div class="settings" style="display: none;">
+        <div class="settings" id="settingsSection" style="display: none;">
             <h3>設定</h3>
             <div class="settings-grid">
                 <div class="setting-item">
@@ -632,6 +659,16 @@
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 3000);
+        }
+
+        // 設定の表示/非表示を切り替え
+        function toggleSettings() {
+            const settingsSection = document.getElementById('settingsSection');
+            if (settingsSection.style.display === 'none') {
+                settingsSection.style.display = 'block';
+            } else {
+                settingsSection.style.display = 'none';
+            }
         }
 
         // 通知音の再生
