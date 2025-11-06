@@ -211,6 +211,20 @@
             margin-bottom: 10px;
         }
 
+        .start-mode-section {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .start-mode-section label {
+            display: block;
+            font-size: 0.9em;
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
         .mode-buttons {
             display: flex;
             gap: 10px;
@@ -332,7 +346,15 @@
             </div>
         </div>
 
-        <div class="settings">
+        <div class="start-mode-section">
+            <label>開始モード</label>
+            <div class="mode-buttons">
+                <button class="mode-btn active" id="startWithWork" onclick="setStartMode('work')">作業から開始</button>
+                <button class="mode-btn" id="startWithBreak" onclick="setStartMode('break')">休憩から開始</button>
+            </div>
+        </div>
+
+        <div class="settings" style="display: none;">
             <h3>設定</h3>
             <div class="settings-grid">
                 <div class="setting-item">
@@ -350,14 +372,6 @@
                 <div class="setting-item">
                     <label for="cyclesBeforeLongBreak">長い休憩までのサイクル</label>
                     <input type="number" id="cyclesBeforeLongBreak" value="4" min="1" max="10">
-                </div>
-            </div>
-
-            <div class="start-mode">
-                <label>開始モード</label>
-                <div class="mode-buttons">
-                    <button class="mode-btn active" id="startWithWork" onclick="setStartMode('work')">作業から開始</button>
-                    <button class="mode-btn" id="startWithBreak" onclick="setStartMode('break')">休憩から開始</button>
                 </div>
             </div>
 
