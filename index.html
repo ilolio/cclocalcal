@@ -514,23 +514,112 @@
             border-radius: 3px;
         }
 
-        .task-textarea {
-            width: 100%;
-            min-height: 400px;
+        .task-add-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .task-input {
+            flex: 1;
+            padding: 10px 12px;
             border: 1px solid #e9ecef;
             border-radius: 8px;
-            padding: 15px;
             font-family: inherit;
             font-size: 14px;
-            line-height: 1.6;
-            resize: vertical;
             transition: border-color 0.3s;
         }
 
-        .task-textarea:focus {
+        .task-input:focus {
             outline: none;
             border-color: #43e97b;
             box-shadow: 0 0 0 3px rgba(67, 233, 123, 0.1);
+        }
+
+        .task-add-btn {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .task-add-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(67, 233, 123, 0.3);
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            background: #e9ecef;
+            border-color: #43e97b;
+            transform: translateX(2px);
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .task-item-title {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .task-item-delete {
+            background: rgba(220, 53, 69, 0.1);
+            border: none;
+            color: #dc3545;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+
+        .task-item-delete:hover {
+            background: rgba(220, 53, 69, 0.2);
+        }
+
+        .task-drop-zone {
+            min-height: 100px;
+            border: 2px dashed #43e97b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 13px;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .task-drop-zone.drag-over {
+            background: rgba(67, 233, 123, 0.1);
+            border-color: #38f9d7;
         }
 
         .toggle-task-btn {
@@ -622,10 +711,6 @@
                 max-height: 250px;
             }
 
-            .task-textarea {
-                min-height: 150px;
-            }
-
             .toggle-task-btn {
                 width: 45px;
                 height: 45px;
@@ -705,12 +790,13 @@
             <button class="task-panel-close" onclick="toggleTaskPanel()">×</button>
         </div>
         <div class="task-panel-content">
-            <textarea
-                class="task-textarea"
-                id="taskTextarea"
-                placeholder="ここにタスクやメモを自由に書き出せます...&#10;&#10;例:&#10;- 明日の会議の準備&#10;- メール返信&#10;- 買い物リスト"
-                oninput="saveTaskNotes()"
-            ></textarea>
+            <div class="task-add-form">
+                <input type="text" id="taskTitleInput" class="task-input" placeholder="タスク名を入力">
+                <button class="task-add-btn" onclick="addTask()">➕</button>
+            </div>
+            <div class="task-list" id="taskList">
+                <!-- タスクアイテムがここに追加されます -->
+            </div>
         </div>
     </div>
     </div>
@@ -757,6 +843,7 @@
 
     <script>
         let schedules = [];
+        let tasks = [];
         let selectedColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         let draggedElement = null;
         let dragStartY = 0;
@@ -766,19 +853,23 @@
         let editingIndex = -1; // -1: 新規作成, 0以上: 編集モード
         let modalSelectedColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         let isDragging = false;
+        let draggedTask = null;
+        let draggedSchedule = null;
 
         // 初期化
         function init() {
             loadSettings();
             loadSchedules();
-            loadTaskNotes();
+            loadTasks();
             renderTimeline();
             renderSchedules();
+            renderTasks();
             updateStats();
             updateCurrentTimeLine();
             setupColorPicker();
             setupModalColorPicker();
             setupTimelineClick();
+            setupTaskDropZone();
 
             // 1分ごとに現在時刻の線を更新
             setInterval(updateCurrentTimeLine, 60000);
@@ -1013,46 +1104,61 @@
         function handleDragStart(e) {
             isDragging = true;
             draggedElement = e.target;
+            draggedSchedule = e.target;
             dragStartY = e.clientY;
             dragStartTop = parseInt(draggedElement.style.top);
             draggedElement.classList.add('dragging');
 
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', draggedElement.innerHTML);
+            e.dataTransfer.setData('text/plain', 'schedule');
         }
 
         // ドラッグ終了
         function handleDragEnd(e) {
+            if (!draggedElement) return;
+
             draggedElement.classList.remove('dragging');
 
-            const deltaY = e.clientY - dragStartY;
-            const newTop = dragStartTop + deltaY;
+            // タスクパネルにドロップされた場合は何もしない（setupTaskDropZoneで処理済み）
+            const taskPanel = document.getElementById('taskPanel');
+            const rect = taskPanel.getBoundingClientRect();
+            const isOverTaskPanel = e.clientX >= rect.left && e.clientX <= rect.right &&
+                                   e.clientY >= rect.top && e.clientY <= rect.bottom;
 
-            const index = parseInt(draggedElement.dataset.index);
-            const schedule = schedules[index];
-            const duration = timeToMinutes(schedule.endTime) - timeToMinutes(schedule.startTime);
+            if (!isOverTaskPanel) {
+                // タイムライン内での移動
+                const deltaY = e.clientY - dragStartY;
+                const newTop = dragStartTop + deltaY;
 
-            // 表示開始時刻からの相対位置を絶対位置（分）に変換
-            const displayStartMinutes = displayStartHour * 60;
-            const displayEndMinutes = displayEndHour * 60;
-            let absoluteMinutes = displayStartMinutes + newTop;
+                const index = parseInt(draggedElement.dataset.index);
+                if (schedules[index]) {
+                    const schedule = schedules[index];
+                    const duration = timeToMinutes(schedule.endTime) - timeToMinutes(schedule.startTime);
 
-            // 表示範囲内に制限
-            const maxStartMinutes = displayEndMinutes - duration;
-            absoluteMinutes = Math.max(displayStartMinutes, Math.min(maxStartMinutes, absoluteMinutes));
+                    // 表示開始時刻からの相対位置を絶対位置（分）に変換
+                    const displayStartMinutes = displayStartHour * 60;
+                    const displayEndMinutes = displayEndHour * 60;
+                    let absoluteMinutes = displayStartMinutes + newTop;
 
-            // 15分単位にスナップ
-            const snappedMinutes = Math.round(absoluteMinutes / 15) * 15;
+                    // 表示範囲内に制限
+                    const maxStartMinutes = displayEndMinutes - duration;
+                    absoluteMinutes = Math.max(displayStartMinutes, Math.min(maxStartMinutes, absoluteMinutes));
 
-            const endMinutes = Math.min(1440, snappedMinutes + duration);
+                    // 15分単位にスナップ
+                    const snappedMinutes = Math.round(absoluteMinutes / 15) * 15;
 
-            schedule.startTime = minutesToTime(snappedMinutes);
-            schedule.endTime = minutesToTime(endMinutes);
+                    const endMinutes = Math.min(1440, snappedMinutes + duration);
 
-            saveSchedules();
-            renderSchedules();
+                    schedule.startTime = minutesToTime(snappedMinutes);
+                    schedule.endTime = minutesToTime(endMinutes);
+
+                    saveSchedules();
+                    renderSchedules();
+                }
+            }
 
             draggedElement = null;
+            draggedSchedule = null;
 
             // ドラッグ終了後、少し遅延してからクリックを有効にする
             setTimeout(() => {
@@ -1133,6 +1239,8 @@
         // タイムラインクリックをセットアップ
         function setupTimelineClick() {
             const timeline = document.getElementById('timeline');
+
+            // クリックイベント
             timeline.addEventListener('click', (e) => {
                 // スケジュールアイテムや他の要素をクリックした場合は無視
                 if (e.target.closest('.schedule-item') ||
@@ -1160,6 +1268,54 @@
                 const endTime = minutesToTime(Math.min(clickMinutes + 60, displayEndHour * 60));
 
                 openCreateModal(startTime, endTime);
+            });
+
+            // タスクからのドロップイベント
+            timeline.addEventListener('dragover', (e) => {
+                if (draggedTask) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                }
+            });
+
+            timeline.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (draggedTask) {
+                    const index = parseInt(draggedTask.dataset.index);
+                    const task = tasks[index];
+
+                    // ドロップ位置から時刻を計算
+                    const rect = timeline.getBoundingClientRect();
+                    const dropY = e.clientY - rect.top + timeline.parentElement.scrollTop;
+
+                    const displayStartMinutes = displayStartHour * 60;
+                    let dropMinutes = displayStartMinutes + dropY;
+
+                    // 15分単位にスナップ
+                    dropMinutes = Math.round(dropMinutes / 15) * 15;
+
+                    // 範囲内に制限
+                    dropMinutes = Math.max(displayStartMinutes, Math.min(displayEndHour * 60 - 60, dropMinutes));
+
+                    // スケジュールとして追加（デフォルト1時間）
+                    const startTime = minutesToTime(dropMinutes);
+                    const endTime = minutesToTime(Math.min(dropMinutes + 60, displayEndHour * 60));
+
+                    schedules.push({
+                        title: task.title,
+                        startTime: startTime,
+                        endTime: endTime,
+                        color: selectedColor
+                    });
+
+                    saveSchedules();
+                    renderSchedules();
+
+                    // タスクを削除
+                    tasks.splice(index, 1);
+                    saveTasks();
+                    renderTasks();
+                }
             });
         }
 
@@ -1300,17 +1456,11 @@
             localStorage.setItem('taskPanelHidden', isHidden);
         }
 
-        // タスクメモを保存
-        function saveTaskNotes() {
-            const notes = document.getElementById('taskTextarea').value;
-            localStorage.setItem('taskNotes', notes);
-        }
-
-        // タスクメモを読み込み
-        function loadTaskNotes() {
-            const notes = localStorage.getItem('taskNotes');
-            if (notes) {
-                document.getElementById('taskTextarea').value = notes;
+        // タスクを読み込み
+        function loadTasks() {
+            const saved = localStorage.getItem('tasks');
+            if (saved) {
+                tasks = JSON.parse(saved);
             }
 
             // パネルの表示状態を復元
@@ -1319,6 +1469,127 @@
                 document.getElementById('taskPanel').classList.remove('hidden');
             }
         }
+
+        // タスクを保存
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // タスクを追加
+        function addTask() {
+            const input = document.getElementById('taskTitleInput');
+            const title = input.value.trim();
+
+            if (!title) {
+                return;
+            }
+
+            tasks.push({ title: title });
+            saveTasks();
+            renderTasks();
+
+            // 入力フィールドをクリア
+            input.value = '';
+        }
+
+        // タスクを削除
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            saveTasks();
+            renderTasks();
+        }
+
+        // タスク一覧を描画
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            if (tasks.length === 0) {
+                taskList.innerHTML = '<div class="task-drop-zone">タスクを追加するか、<br>スケジュールをドロップ</div>';
+                return;
+            }
+
+            tasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.draggable = true;
+                taskItem.dataset.index = index;
+
+                const title = document.createElement('div');
+                title.className = 'task-item-title';
+                title.textContent = task.title;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'task-item-delete';
+                deleteBtn.textContent = '×';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteTask(index);
+                };
+
+                taskItem.appendChild(title);
+                taskItem.appendChild(deleteBtn);
+
+                // タスクのドラッグイベント
+                taskItem.addEventListener('dragstart', handleTaskDragStart);
+                taskItem.addEventListener('dragend', handleTaskDragEnd);
+
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        // タスクのドラッグ開始
+        function handleTaskDragStart(e) {
+            draggedTask = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', 'task');
+            draggedTask.classList.add('dragging');
+        }
+
+        // タスクのドラッグ終了
+        function handleTaskDragEnd(e) {
+            if (draggedTask) {
+                draggedTask.classList.remove('dragging');
+                draggedTask = null;
+            }
+        }
+
+        // タスクエリアのドロップゾーンをセットアップ
+        function setupTaskDropZone() {
+            const taskList = document.getElementById('taskList');
+
+            taskList.addEventListener('dragover', (e) => {
+                if (draggedSchedule) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                }
+            });
+
+            taskList.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (draggedSchedule) {
+                    const index = parseInt(draggedSchedule.dataset.index);
+                    const schedule = schedules[index];
+
+                    // タスクとして追加
+                    tasks.push({ title: schedule.title });
+                    saveTasks();
+                    renderTasks();
+
+                    // スケジュールを削除
+                    schedules.splice(index, 1);
+                    saveSchedules();
+                    renderSchedules();
+                }
+            });
+        }
+
+        // Enterキーでタスク追加
+        document.getElementById('taskTitleInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
 
         // ページ読み込み時に初期化
         window.addEventListener('load', init);
