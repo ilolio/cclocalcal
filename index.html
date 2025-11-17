@@ -760,11 +760,11 @@
             <div class="time-range-left">
                 <div class="time-range-group">
                     <label for="displayStartTime">表示開始:</label>
-                    <input type="time" id="displayStartTime" class="display-time" value="06:00" onchange="updateDisplayRange()">
+                    <input type="time" id="displayStartTime" class="display-time" value="06:00" onblur="updateDisplayRange()">
                 </div>
                 <div class="time-range-group">
                     <label for="displayEndTime">表示終了:</label>
-                    <input type="time" id="displayEndTime" class="display-time" value="24:00" onchange="updateDisplayRange()">
+                    <input type="time" id="displayEndTime" class="display-time" value="24:00" onblur="updateDisplayRange()">
                 </div>
             </div>
             <button class="export-btn" onclick="exportScheduleAsText()">📄 テキスト出力</button>
