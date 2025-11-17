@@ -21,10 +21,17 @@
             justify-content: center;
         }
 
-        .container {
-            max-width: 1000px;
+        .wrapper {
+            display: flex;
+            gap: 20px;
             width: 100%;
+            max-width: 1400px;
             height: calc(100vh - 40px);
+        }
+
+        .container {
+            flex: 1;
+            min-width: 0;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -445,12 +452,141 @@
             background: #c82333;
         }
 
+        .task-panel {
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .task-panel.hidden {
+            display: none;
+        }
+
+        .task-panel-header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-panel-close {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: background 0.3s;
+        }
+
+        .task-panel-close:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .task-panel-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .task-panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .task-panel-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .task-panel-content::-webkit-scrollbar-thumb {
+            background: #43e97b;
+            border-radius: 3px;
+        }
+
+        .task-textarea {
+            width: 100%;
+            min-height: 400px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .task-textarea:focus {
+            outline: none;
+            border-color: #43e97b;
+            box-shadow: 0 0 0 3px rgba(67, 233, 123, 0.1);
+        }
+
+        .toggle-task-btn {
+            position: fixed;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(67, 233, 123, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-task-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 6px 16px rgba(67, 233, 123, 0.5);
+        }
+
+        @media (max-width: 1024px) {
+            .wrapper {
+                flex-direction: column;
+            }
+
+            .task-panel {
+                width: 100%;
+                max-height: 300px;
+            }
+
+            .toggle-task-btn {
+                top: auto;
+                bottom: 30px;
+                right: 30px;
+                transform: none;
+            }
+
+            .toggle-task-btn:hover {
+                transform: scale(1.1);
+            }
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
             }
 
-            .container {
+            .wrapper {
                 height: calc(100vh - 20px);
             }
 
@@ -481,10 +617,30 @@
                 width: 40px;
                 font-size: 10px;
             }
+
+            .task-panel {
+                max-height: 250px;
+            }
+
+            .task-textarea {
+                min-height: 150px;
+            }
+
+            .toggle-task-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+                right: 20px;
+                bottom: 20px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- トグルボタン -->
+    <button class="toggle-task-btn" id="toggleTaskBtn" onclick="toggleTaskPanel()">📝</button>
+
+    <div class="wrapper">
     <div class="container">
         <div class="header">
             <h1>📅 1日のスケジュール</h1>
@@ -540,6 +696,23 @@
                 <div class="stat-label">空き時間</div>
             </div>
         </div>
+    </div>
+
+    <!-- タスク一時置き場 -->
+    <div class="task-panel hidden" id="taskPanel">
+        <div class="task-panel-header">
+            <span>📝 タスク一時置き場</span>
+            <button class="task-panel-close" onclick="toggleTaskPanel()">×</button>
+        </div>
+        <div class="task-panel-content">
+            <textarea
+                class="task-textarea"
+                id="taskTextarea"
+                placeholder="ここにタスクやメモを自由に書き出せます...&#10;&#10;例:&#10;- 明日の会議の準備&#10;- メール返信&#10;- 買い物リスト"
+                oninput="saveTaskNotes()"
+            ></textarea>
+        </div>
+    </div>
     </div>
 
     <!-- モーダルダイアログ -->
@@ -598,6 +771,7 @@
         function init() {
             loadSettings();
             loadSchedules();
+            loadTaskNotes();
             renderTimeline();
             renderSchedules();
             updateStats();
@@ -1115,6 +1289,36 @@
                 saveScheduleFromModal();
             }
         });
+
+        // タスクパネルの表示/非表示を切り替え
+        function toggleTaskPanel() {
+            const panel = document.getElementById('taskPanel');
+            panel.classList.toggle('hidden');
+
+            // 表示状態を保存
+            const isHidden = panel.classList.contains('hidden');
+            localStorage.setItem('taskPanelHidden', isHidden);
+        }
+
+        // タスクメモを保存
+        function saveTaskNotes() {
+            const notes = document.getElementById('taskTextarea').value;
+            localStorage.setItem('taskNotes', notes);
+        }
+
+        // タスクメモを読み込み
+        function loadTaskNotes() {
+            const notes = localStorage.getItem('taskNotes');
+            if (notes) {
+                document.getElementById('taskTextarea').value = notes;
+            }
+
+            // パネルの表示状態を復元
+            const isHidden = localStorage.getItem('taskPanelHidden');
+            if (isHidden === 'false') {
+                document.getElementById('taskPanel').classList.remove('hidden');
+            }
+        }
 
         // ページ読み込み時に初期化
         window.addEventListener('load', init);
