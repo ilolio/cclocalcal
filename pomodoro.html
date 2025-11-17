@@ -220,6 +220,57 @@
             accent-color: #667eea;
         }
 
+        .setting-sound-select {
+            margin-top: 15px;
+        }
+
+        .setting-sound-select label {
+            display: block;
+            font-size: 0.9em;
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .sound-control {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sound-control select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+            background: white;
+            cursor: pointer;
+        }
+
+        .sound-control select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .preview-sound-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .preview-sound-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
         .start-mode {
             margin-top: 20px;
             padding-top: 20px;
@@ -436,6 +487,20 @@
                 </label>
             </div>
 
+            <div class="setting-sound-select">
+                <label for="soundType">通知音の種類</label>
+                <div class="sound-control">
+                    <select id="soundType">
+                        <option value="beep">ビープ音</option>
+                        <option value="bell">ベル音</option>
+                        <option value="chime">チャイム音</option>
+                        <option value="soft">ソフト音</option>
+                        <option value="alert">アラート音</option>
+                    </select>
+                    <button type="button" class="preview-sound-btn" onclick="previewSound()">試聴</button>
+                </div>
+            </div>
+
             <button class="save-settings" onclick="saveSettings()">設定を保存</button>
         </div>
     </div>
@@ -463,7 +528,8 @@
             longBreakDuration: 15,
             cyclesBeforeLongBreak: 4,
             initialBreakDuration: 10,
-            soundEnabled: true
+            soundEnabled: true,
+            soundType: 'beep'
         };
 
         // 初期化
@@ -505,6 +571,7 @@
             settings.cyclesBeforeLongBreak = parseInt(document.getElementById('cyclesBeforeLongBreak').value);
             settings.initialBreakDuration = parseInt(document.getElementById('initialBreakDuration').value);
             settings.soundEnabled = document.getElementById('soundEnabled').checked;
+            settings.soundType = document.getElementById('soundType').value;
 
             const data = {
                 settings: settings,
@@ -550,6 +617,7 @@
             document.getElementById('cyclesBeforeLongBreak').value = settings.cyclesBeforeLongBreak;
             document.getElementById('initialBreakDuration').value = settings.initialBreakDuration;
             document.getElementById('soundEnabled').checked = settings.soundEnabled;
+            document.getElementById('soundType').value = settings.soundType;
         }
 
         // 統計UIの更新
@@ -734,8 +802,36 @@
 
         // 通知音の再生
         function playNotificationSound() {
-            // Web Audio APIを使用してシンプルなビープ音を生成
+            playSound(settings.soundType);
+        }
+
+        // 音を再生する関数
+        function playSound(soundType) {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            switch(soundType) {
+                case 'beep':
+                    playBeepSound(audioContext);
+                    break;
+                case 'bell':
+                    playBellSound(audioContext);
+                    break;
+                case 'chime':
+                    playChimeSound(audioContext);
+                    break;
+                case 'soft':
+                    playSoftSound(audioContext);
+                    break;
+                case 'alert':
+                    playAlertSound(audioContext);
+                    break;
+                default:
+                    playBeepSound(audioContext);
+            }
+        }
+
+        // ビープ音
+        function playBeepSound(audioContext) {
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
@@ -750,6 +846,102 @@
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // ベル音
+        function playBellSound(audioContext) {
+            const frequencies = [800, 1000, 1200];
+            const now = audioContext.currentTime;
+
+            frequencies.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+
+                const delay = index * 0.05;
+                gainNode.gain.setValueAtTime(0.2, now + delay);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.8);
+
+                oscillator.start(now + delay);
+                oscillator.stop(now + delay + 0.8);
+            });
+        }
+
+        // チャイム音
+        function playChimeSound(audioContext) {
+            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+            const now = audioContext.currentTime;
+
+            notes.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = freq;
+                oscillator.type = 'triangle';
+
+                const delay = index * 0.15;
+                gainNode.gain.setValueAtTime(0.25, now + delay);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.4);
+
+                oscillator.start(now + delay);
+                oscillator.stop(now + delay + 0.4);
+            });
+        }
+
+        // ソフト音
+        function playSoftSound(audioContext) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 440;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.0);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1.0);
+        }
+
+        // アラート音
+        function playAlertSound(audioContext) {
+            const now = audioContext.currentTime;
+
+            for (let i = 0; i < 3; i++) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 900;
+                oscillator.type = 'square';
+
+                const delay = i * 0.2;
+                gainNode.gain.setValueAtTime(0.2, now + delay);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.1);
+
+                oscillator.start(now + delay);
+                oscillator.stop(now + delay + 0.1);
+            }
+        }
+
+        // プレビュー音の再生
+        function previewSound() {
+            const soundType = document.getElementById('soundType').value;
+            playSound(soundType);
         }
 
         // ページが非表示になる時にタイマーを一時停止
