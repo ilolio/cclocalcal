@@ -108,6 +108,7 @@
             align-items: center;
             flex-wrap: wrap;
             flex: 0 0 auto;
+            justify-content: space-between;
         }
 
         .time-range-controls label {
@@ -120,6 +121,29 @@
             display: flex;
             gap: 8px;
             align-items: center;
+        }
+
+        .time-range-left {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            padding: 8px 12px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+
+        .export-btn:hover {
+            background: #5a6268;
         }
 
         .schedule-container {
@@ -733,14 +757,17 @@
         </div>
 
         <div class="time-range-controls">
-            <div class="time-range-group">
-                <label for="displayStartTime">表示開始:</label>
-                <input type="time" id="displayStartTime" class="display-time" value="06:00" onchange="updateDisplayRange()">
+            <div class="time-range-left">
+                <div class="time-range-group">
+                    <label for="displayStartTime">表示開始:</label>
+                    <input type="time" id="displayStartTime" class="display-time" value="06:00" onchange="updateDisplayRange()">
+                </div>
+                <div class="time-range-group">
+                    <label for="displayEndTime">表示終了:</label>
+                    <input type="time" id="displayEndTime" class="display-time" value="24:00" onchange="updateDisplayRange()">
+                </div>
             </div>
-            <div class="time-range-group">
-                <label for="displayEndTime">表示終了:</label>
-                <input type="time" id="displayEndTime" class="display-time" value="24:00" onchange="updateDisplayRange()">
-            </div>
+            <button class="export-btn" onclick="exportScheduleAsText()">📄 テキスト出力</button>
         </div>
 
         <div class="controls">
@@ -749,7 +776,6 @@
             <input type="time" id="endTime" value="10:00">
             <button onclick="addSchedule()">➕ 追加</button>
             <button onclick="clearAllSchedules()">🗑️ 全削除</button>
-            <button onclick="exportScheduleAsText()">📄 テキスト出力</button>
         </div>
 
         <div class="color-picker" style="padding: 10px 20px; background: #f8f9fa;">
