@@ -46,6 +46,7 @@
             padding: 30px;
             text-align: center;
             flex: 0 0 auto;
+            position: relative;
         }
 
         .header h1 {
@@ -55,6 +56,94 @@
 
         .header p {
             opacity: 0.9;
+        }
+
+        .collapsible-section {
+            flex: 0 0 auto;
+        }
+
+        .collapsible-header {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapse-toggle {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: background 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .collapse-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .collapse-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+            max-height: 1000px;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        #headerContent {
+            max-height: 100px;
+        }
+
+        .section-toggle {
+            background: rgba(102, 126, 234, 0.1);
+            border: none;
+            color: #667eea;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            transition: background 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+        }
+
+        .section-toggle:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .section-toggle.collapsed {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .time-range-controls,
+        .controls,
+        .color-picker {
+            position: relative;
         }
 
         .controls {
@@ -752,40 +841,55 @@
     <div class="wrapper">
     <div class="container">
         <div class="header">
+            <button class="collapse-toggle" onclick="toggleSection('header')" title="折りたたみ">▼</button>
             <h1>📅 1日のスケジュール</h1>
-            <p>ドラッグ&ドロップでスケジュールを簡単に管理</p>
+            <div class="collapsible-content" id="headerContent">
+                <p>ドラッグ&ドロップでスケジュールを簡単に管理</p>
+            </div>
         </div>
 
-        <div class="time-range-controls">
-            <div class="time-range-left">
-                <div class="time-range-group">
-                    <label for="displayStartTime">表示開始:</label>
-                    <input type="time" id="displayStartTime" class="display-time" value="06:00" onblur="updateDisplayRange()">
-                </div>
-                <div class="time-range-group">
-                    <label for="displayEndTime">表示終了:</label>
-                    <input type="time" id="displayEndTime" class="display-time" value="24:00" onblur="updateDisplayRange()">
+        <div class="collapsible-section">
+            <div class="time-range-controls collapsible-header" style="cursor: default;">
+                <button class="section-toggle" onclick="toggleSection('timeRange')" title="折りたたみ">▼</button>
+                <div class="collapsible-content" id="timeRangeContent" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: space-between; width: 100%;">
+                    <div class="time-range-left">
+                        <div class="time-range-group">
+                            <label for="displayStartTime">表示開始:</label>
+                            <input type="time" id="displayStartTime" class="display-time" value="06:00" onblur="updateDisplayRange()">
+                        </div>
+                        <div class="time-range-group">
+                            <label for="displayEndTime">表示終了:</label>
+                            <input type="time" id="displayEndTime" class="display-time" value="24:00" onblur="updateDisplayRange()">
+                        </div>
+                    </div>
+                    <button class="export-btn" onclick="exportScheduleAsText()">📄 テキスト出力</button>
                 </div>
             </div>
-            <button class="export-btn" onclick="exportScheduleAsText()">📄 テキスト出力</button>
         </div>
 
-        <div class="controls">
-            <input type="text" id="scheduleTitle" placeholder="スケジュール名を入力">
-            <input type="time" id="startTime" value="09:00">
-            <input type="time" id="endTime" value="10:00">
-            <button onclick="addSchedule()">➕ 追加</button>
-            <button onclick="clearAllSchedules()">🗑️ 全削除</button>
-        </div>
+        <div class="collapsible-section">
+            <div style="position: relative; background: #f8f9fa; border-bottom: 2px solid #e9ecef;">
+                <button class="section-toggle" onclick="toggleSection('addSchedule')" title="折りたたみ" style="background: rgba(102, 126, 234, 0.1); color: #667eea; top: 20px;">▼</button>
+                <div class="collapsible-content" id="addScheduleContent">
+                    <div class="controls" style="border-bottom: none;">
+                        <input type="text" id="scheduleTitle" placeholder="スケジュール名を入力">
+                        <input type="time" id="startTime" value="09:00">
+                        <input type="time" id="endTime" value="10:00">
+                        <button onclick="addSchedule()">➕ 追加</button>
+                        <button onclick="clearAllSchedules()">🗑️ 全削除</button>
+                    </div>
 
-        <div class="color-picker" style="padding: 10px 20px; background: #f8f9fa;">
-            <span style="font-size: 12px; color: #6c757d; align-self: center;">色:</span>
-            <div class="color-option selected" data-color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-            <div class="color-option" data-color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
-            <div class="color-option" data-color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
-            <div class="color-option" data-color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
-            <div class="color-option" data-color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
-            <div class="color-option" data-color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                    <div class="color-picker" style="padding: 10px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+                        <span style="font-size: 12px; color: #6c757d; align-self: center;">色:</span>
+                        <div class="color-option selected" data-color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                        <div class="color-option" data-color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="schedule-container">
@@ -888,6 +992,7 @@
             loadSettings();
             loadSchedules();
             loadTasks();
+            loadCollapsibleStates();
             renderTimeline();
             renderSchedules();
             renderTasks();
@@ -900,6 +1005,52 @@
 
             // 1分ごとに現在時刻の線を更新
             setInterval(updateCurrentTimeLine, 60000);
+        }
+
+        // 折りたたみ状態を切り替え
+        function toggleSection(sectionId) {
+            const contentId = sectionId + 'Content';
+            const content = document.getElementById(contentId);
+            const toggle = event.currentTarget;
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.classList.remove('collapsed');
+                toggle.textContent = '▼';
+                saveCollapsibleState(sectionId, false);
+            } else {
+                content.classList.add('collapsed');
+                toggle.classList.add('collapsed');
+                toggle.textContent = '▶';
+                saveCollapsibleState(sectionId, true);
+            }
+        }
+
+        // 折りたたみ状態を保存
+        function saveCollapsibleState(sectionId, isCollapsed) {
+            const states = JSON.parse(localStorage.getItem('collapsibleStates') || '{}');
+            states[sectionId] = isCollapsed;
+            localStorage.setItem('collapsibleStates', JSON.stringify(states));
+        }
+
+        // 折りたたみ状態を読み込み
+        function loadCollapsibleStates() {
+            const states = JSON.parse(localStorage.getItem('collapsibleStates') || '{}');
+            const sections = ['header', 'timeRange', 'addSchedule'];
+
+            sections.forEach(sectionId => {
+                if (states[sectionId]) {
+                    const contentId = sectionId + 'Content';
+                    const content = document.getElementById(contentId);
+                    const toggleBtn = document.querySelector(`[onclick="toggleSection('${sectionId}')"]`);
+
+                    if (content && toggleBtn) {
+                        content.classList.add('collapsed');
+                        toggleBtn.classList.add('collapsed');
+                        toggleBtn.textContent = '▶';
+                    }
+                }
+            });
         }
 
         // ローカルストレージから設定を読み込み
