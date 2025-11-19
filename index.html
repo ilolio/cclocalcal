@@ -58,92 +58,50 @@
             opacity: 0.9;
         }
 
-        .collapsible-section {
+        .controls-section {
             flex: 0 0 auto;
-        }
-
-        .collapsible-header {
-            position: relative;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .collapse-toggle {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-            transition: background 0.3s, transform 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .collapse-toggle:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .collapse-toggle.collapsed {
-            transform: rotate(-90deg);
-        }
-
-        .collapsible-content {
             overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
-            max-height: 1000px;
-            opacity: 1;
+            transition: max-height 0.4s ease-out;
         }
 
-        .collapsible-content.collapsed {
-            max-height: 0;
-            opacity: 0;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
+        .controls-section.collapsed {
+            max-height: 0 !important;
         }
 
-        #headerContent {
-            max-height: 100px;
-        }
-
-        .section-toggle {
-            background: rgba(102, 126, 234, 0.1);
-            border: none;
+        .collapse-all-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #667eea;
             color: #667eea;
-            padding: 8px 12px;
-            border-radius: 5px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 20px;
             line-height: 1;
-            transition: background 0.3s, transform 0.3s;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
+            z-index: 999;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .section-toggle:hover {
-            background: rgba(102, 126, 234, 0.2);
+        .collapse-all-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
         }
 
-        .section-toggle.collapsed {
-            transform: translateY(-50%) rotate(-90deg);
+        .collapse-all-btn.collapsed {
+            transform: rotate(180deg);
         }
 
-        .time-range-controls,
-        .controls,
-        .color-picker {
-            position: relative;
+        .collapse-all-btn.collapsed:hover {
+            transform: rotate(180deg) scale(1.1);
         }
 
         .controls {
@@ -781,6 +739,14 @@
             .toggle-task-btn:hover {
                 transform: scale(1.1);
             }
+
+            .collapse-all-btn {
+                top: 20px;
+                right: 20px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
         }
 
         @media (max-width: 600px) {
@@ -831,64 +797,60 @@
                 right: 20px;
                 bottom: 20px;
             }
+
+            .collapse-all-btn {
+                top: 15px;
+                right: 15px;
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <!-- トグルボタン -->
     <button class="toggle-task-btn" id="toggleTaskBtn" onclick="toggleTaskPanel()">📝</button>
+    <button class="collapse-all-btn" id="collapseAllBtn" onclick="toggleAllControls()" title="コントロールを折りたたむ">▲</button>
 
     <div class="wrapper">
     <div class="container">
-        <div class="header">
-            <button class="collapse-toggle" onclick="toggleSection('header')" title="折りたたみ">▼</button>
-            <h1>📅 1日のスケジュール</h1>
-            <div class="collapsible-content" id="headerContent">
+        <div class="controls-section" id="controlsSection">
+            <div class="header">
+                <h1>📅 1日のスケジュール</h1>
                 <p>ドラッグ&ドロップでスケジュールを簡単に管理</p>
             </div>
-        </div>
 
-        <div class="collapsible-section">
-            <div class="time-range-controls collapsible-header" style="cursor: default;">
-                <button class="section-toggle" onclick="toggleSection('timeRange')" title="折りたたみ">▼</button>
-                <div class="collapsible-content" id="timeRangeContent" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: space-between; width: 100%;">
-                    <div class="time-range-left">
-                        <div class="time-range-group">
-                            <label for="displayStartTime">表示開始:</label>
-                            <input type="time" id="displayStartTime" class="display-time" value="06:00" onblur="updateDisplayRange()">
-                        </div>
-                        <div class="time-range-group">
-                            <label for="displayEndTime">表示終了:</label>
-                            <input type="time" id="displayEndTime" class="display-time" value="24:00" onblur="updateDisplayRange()">
-                        </div>
+            <div class="time-range-controls">
+                <div class="time-range-left">
+                    <div class="time-range-group">
+                        <label for="displayStartTime">表示開始:</label>
+                        <input type="time" id="displayStartTime" class="display-time" value="06:00" onblur="updateDisplayRange()">
                     </div>
-                    <button class="export-btn" onclick="exportScheduleAsText()">📄 テキスト出力</button>
+                    <div class="time-range-group">
+                        <label for="displayEndTime">表示終了:</label>
+                        <input type="time" id="displayEndTime" class="display-time" value="24:00" onblur="updateDisplayRange()">
+                    </div>
                 </div>
+                <button class="export-btn" onclick="exportScheduleAsText()">📄 テキスト出力</button>
             </div>
-        </div>
 
-        <div class="collapsible-section">
-            <div style="position: relative; background: #f8f9fa; border-bottom: 2px solid #e9ecef;">
-                <button class="section-toggle" onclick="toggleSection('addSchedule')" title="折りたたみ" style="background: rgba(102, 126, 234, 0.1); color: #667eea; top: 20px;">▼</button>
-                <div class="collapsible-content" id="addScheduleContent">
-                    <div class="controls" style="border-bottom: none;">
-                        <input type="text" id="scheduleTitle" placeholder="スケジュール名を入力">
-                        <input type="time" id="startTime" value="09:00">
-                        <input type="time" id="endTime" value="10:00">
-                        <button onclick="addSchedule()">➕ 追加</button>
-                        <button onclick="clearAllSchedules()">🗑️ 全削除</button>
-                    </div>
+            <div class="controls">
+                <input type="text" id="scheduleTitle" placeholder="スケジュール名を入力">
+                <input type="time" id="startTime" value="09:00">
+                <input type="time" id="endTime" value="10:00">
+                <button onclick="addSchedule()">➕ 追加</button>
+                <button onclick="clearAllSchedules()">🗑️ 全削除</button>
+            </div>
 
-                    <div class="color-picker" style="padding: 10px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
-                        <span style="font-size: 12px; color: #6c757d; align-self: center;">色:</span>
-                        <div class="color-option selected" data-color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-                        <div class="color-option" data-color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
-                        <div class="color-option" data-color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
-                        <div class="color-option" data-color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
-                        <div class="color-option" data-color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
-                        <div class="color-option" data-color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
-                    </div>
-                </div>
+            <div class="color-picker" style="padding: 10px 20px; background: #f8f9fa; border-bottom: 2px solid #e9ecef;">
+                <span style="font-size: 12px; color: #6c757d; align-self: center;">色:</span>
+                <div class="color-option selected" data-color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                <div class="color-option" data-color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                <div class="color-option" data-color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                <div class="color-option" data-color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                <div class="color-option" data-color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                <div class="color-option" data-color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
             </div>
         </div>
 
@@ -992,7 +954,7 @@
             loadSettings();
             loadSchedules();
             loadTasks();
-            loadCollapsibleStates();
+            loadControlsCollapseState();
             renderTimeline();
             renderSchedules();
             renderTasks();
@@ -1002,55 +964,62 @@
             setupModalColorPicker();
             setupTimelineClick();
             setupTaskDropZone();
+            updateControlsSectionHeight();
 
             // 1分ごとに現在時刻の線を更新
             setInterval(updateCurrentTimeLine, 60000);
         }
 
-        // 折りたたみ状態を切り替え
-        function toggleSection(sectionId) {
-            const contentId = sectionId + 'Content';
-            const content = document.getElementById(contentId);
-            const toggle = event.currentTarget;
-
-            if (content.classList.contains('collapsed')) {
-                content.classList.remove('collapsed');
-                toggle.classList.remove('collapsed');
-                toggle.textContent = '▼';
-                saveCollapsibleState(sectionId, false);
-            } else {
-                content.classList.add('collapsed');
-                toggle.classList.add('collapsed');
-                toggle.textContent = '▶';
-                saveCollapsibleState(sectionId, true);
+        // コントロールセクションの高さを設定
+        function updateControlsSectionHeight() {
+            const section = document.getElementById('controlsSection');
+            if (!section.classList.contains('collapsed')) {
+                section.style.maxHeight = section.scrollHeight + 'px';
             }
         }
 
-        // 折りたたみ状態を保存
-        function saveCollapsibleState(sectionId, isCollapsed) {
-            const states = JSON.parse(localStorage.getItem('collapsibleStates') || '{}');
-            states[sectionId] = isCollapsed;
-            localStorage.setItem('collapsibleStates', JSON.stringify(states));
+        // 全コントロールの折りたたみを切り替え
+        function toggleAllControls() {
+            const section = document.getElementById('controlsSection');
+            const btn = document.getElementById('collapseAllBtn');
+
+            if (section.classList.contains('collapsed')) {
+                // 展開
+                section.style.maxHeight = section.scrollHeight + 'px';
+                section.classList.remove('collapsed');
+                btn.classList.remove('collapsed');
+                btn.textContent = '▲';
+                btn.title = 'コントロールを折りたたむ';
+                localStorage.setItem('controlsCollapsed', 'false');
+            } else {
+                // 折りたたむ
+                section.style.maxHeight = '0';
+                section.classList.add('collapsed');
+                btn.classList.add('collapsed');
+                btn.textContent = '▼';
+                btn.title = 'コントロールを展開';
+                localStorage.setItem('controlsCollapsed', 'true');
+            }
         }
 
         // 折りたたみ状態を読み込み
-        function loadCollapsibleStates() {
-            const states = JSON.parse(localStorage.getItem('collapsibleStates') || '{}');
-            const sections = ['header', 'timeRange', 'addSchedule'];
+        function loadControlsCollapseState() {
+            const isCollapsed = localStorage.getItem('controlsCollapsed') === 'true';
+            const section = document.getElementById('controlsSection');
+            const btn = document.getElementById('collapseAllBtn');
 
-            sections.forEach(sectionId => {
-                if (states[sectionId]) {
-                    const contentId = sectionId + 'Content';
-                    const content = document.getElementById(contentId);
-                    const toggleBtn = document.querySelector(`[onclick="toggleSection('${sectionId}')"]`);
-
-                    if (content && toggleBtn) {
-                        content.classList.add('collapsed');
-                        toggleBtn.classList.add('collapsed');
-                        toggleBtn.textContent = '▶';
-                    }
-                }
-            });
+            if (isCollapsed) {
+                section.classList.add('collapsed');
+                section.style.maxHeight = '0';
+                btn.classList.add('collapsed');
+                btn.textContent = '▼';
+                btn.title = 'コントロールを展開';
+            } else {
+                // 展開状態の高さを設定
+                setTimeout(() => {
+                    section.style.maxHeight = section.scrollHeight + 'px';
+                }, 0);
+            }
         }
 
         // ローカルストレージから設定を読み込み
